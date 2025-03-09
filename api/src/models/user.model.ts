@@ -1,6 +1,6 @@
 import { Model } from "mongoose";
 import bcrypt from "bcryptjs";
-import jwt, { type JwtPayload } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import mongoose from "mongoose";
 interface IUser extends Document {
   email: string;
@@ -42,7 +42,9 @@ userSchema.methods.isValidPassword = async function(password: string){
 }
 
 userSchema.methods.generateJWT = function(){
-  return jwt.sign({email: this.email}, process.env.JWT_SECRET || "YOUR_JWT_SECRET")
+  return jwt.sign({email: this.email}, process.env.JWT_SECRET || "YOUR_JWT_SECRET", {
+    expiresIn: '24h'
+  })
 }
 
 export const User = mongoose.model<IUser, UserModel>("User", userSchema)

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createUserController, loginController, profileController } from "../controllers/auth.controller";
+import { createUserController, loginController, logoutController, profileController } from "../controllers/auth.controller";
 import { body } from "express-validator";
 import authMiddleware from "../middlewares/auth.middleware";
 const authRouter = Router()
@@ -15,5 +15,6 @@ authRouter.post('/login',
   loginController)
 
 authRouter.get('/profile',authMiddleware, profileController)
+authRouter.post('/logout',authMiddleware, logoutController)
 
 export default authRouter
