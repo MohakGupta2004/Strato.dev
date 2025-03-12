@@ -15,8 +15,12 @@ export const createUserController = async (req: express.Request, res: express.Re
   
   try {
    const userResult = await createUser(req.body)
+   const userObject:{
+    password?:string
+   } = userResult.toObject();
+   delete userObject.password;
    const token = userResult.generateJWT()
-   res.status(200).json({userResult, token})
+   res.status(200).json({userObject, token})
   } catch (error: any) {
    res.status(400).json(error.message) 
   }
@@ -38,8 +42,12 @@ export const loginController = async (req: express.Request, res: express.Respons
     res.status(401).json({message: "Unauthorized"})  
     return;
    }
+   const userObject:{
+    password?:string
+   } = userResult.toObject();
+   delete userObject.password;
    const token = userResult.generateJWT()
-   res.status(200).json({userResult, token})
+   res.status(200).json({userObject, token})
   } catch (error: any) {
    res.status(400).json(error.message) 
   }
