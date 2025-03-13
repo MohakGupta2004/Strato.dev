@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { api } from '../utils/api';
+import Chat from '../components/Chat';
 
 export const Projects = () => {
   const location = useLocation();
@@ -28,5 +29,8 @@ export const Projects = () => {
     return <div>Loading...</div>; // Show a loading state while waiting for API response
   }
 
-  return <>{isProjectExist ? <div>{value}</div> : <Navigate to="/" />}</>
+  return <>{isProjectExist ?
+   <div className='w-1/3'>
+    <Chat/>
+  </div> : <Navigate to="/" />}</>
 };
