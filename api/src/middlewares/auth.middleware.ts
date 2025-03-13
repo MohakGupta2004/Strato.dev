@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import jwt, { type JwtPayload } from 'jsonwebtoken'
 import redis from "../services/redis.service";
 interface DecodedToken extends JwtPayload{
+  _id: string
  email: string 
 }
 const authMiddleware = async (req: Request, res: Response, next: NextFunction )=>{
@@ -18,6 +19,7 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction )=
     return;
   }
   const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken
+  console.log(decoded)
   req.user = decoded
   next() 
 }

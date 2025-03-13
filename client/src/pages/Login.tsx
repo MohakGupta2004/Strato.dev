@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {  useState } from "react";
 import { api } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { Cookies } from "react-cookie";
@@ -39,7 +39,6 @@ export const Login = () => {
             setError(error.response?.data?.message || "Login failed");
         }
     };
-
     return (
         <div className="bg-white dark:bg-gray-900 h-screen grid content-center">
             <div className="flex items-center w-full max-w-md px-6 mx-auto lg:w-2/6">
