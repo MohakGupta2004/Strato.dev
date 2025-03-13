@@ -12,7 +12,7 @@ export const Users = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
       >
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-bold">Users</h2>
-          <button className="px-4 py-2 bg-red-500 text-white rounded-lg" onClick={onClose}>
+          <button className="px-4 py-2 bg-red-500 text-white rounded-lg cursor-pointer" onClick={onClose}>
             X
           </button>
         </div>
