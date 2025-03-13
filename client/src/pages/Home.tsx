@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../utils/api";
+import { useNavigate } from "react-router-dom";
 
 export const Home = () => {
   const [projects, setProjects] = useState<Array<{ _id: string; name: string; users: Array<string> }>>([]);
@@ -34,6 +35,7 @@ export const Home = () => {
       console.error(err);
     }
   };
+  const navigate = useNavigate()
 
   return (
     <div className="flex items-center space-x-6 m-11">
@@ -52,7 +54,10 @@ export const Home = () => {
           <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">
             {project.name}
           </h5>
-          <a href="#" className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300">
+          <p>Collaborators: {project.users.length}</p>
+          <a onClick={()=>{
+            navigate(`/projects?name=${project.name}`)
+          }} href="#" className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300">
             Start
             <svg className="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
               <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>

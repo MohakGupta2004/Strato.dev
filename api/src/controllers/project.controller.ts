@@ -1,5 +1,5 @@
 import { validationResult } from "express-validator";
-import { addUser, createProject, getProjects } from "../services/project.service";
+import { addUser, checkProjectUser, createProject, getProjects } from "../services/project.service";
 import express from 'express'
 
 export const createProjectController = async(req: express.Request, res: express.Response)=>{
@@ -63,4 +63,25 @@ export const addUserController = async (req: express.Request, res: express.Respo
    } catch (error) {
     console.log(error)
    }
+}
+
+export const checkProjectUserController = async (req: express.Request, res: express.Response)=>{
+    try {
+        const errors = validationResult(req)
+        if(!errors.isEmpty()){
+            res.status(400).json(errors)
+        }
+        const {name} = req.body
+        const user = req.user
+        if(!user){
+            res.status(400).json({
+                message: "Unauthorized"
+            })
+            return;
+        }
+        const result = await checkProjectUser(name, user);
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+    }
 }

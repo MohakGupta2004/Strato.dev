@@ -76,3 +76,22 @@ export const addUser = async(name: string, email: string, user:{_id: string, ema
         }
     }
 }
+
+export const checkProjectUser = async(name: string, user:{_id: string, email: string})=>{
+    try {
+        // console.log("USERSER", user)
+        const checkProjectUserDetails = await Project.findOne({
+            name,
+            users:{
+                $in:[user._id]
+            }
+        })
+        console.log("YOOOOOOO", checkProjectUserDetails)
+        if(!checkProjectUserDetails){
+            return false
+        }
+        return true
+    } catch (error) {
+        console.log(error)
+    }
+}
