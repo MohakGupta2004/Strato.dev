@@ -1,5 +1,5 @@
 import { Router, query } from "express";
-import { addUserController, checkProjectUserController, createProjectController, getProjectsController } from "../controllers/project.controller";
+import { addUserController, checkProjectUserController, createProjectController, getProjectUserFromNameController, getProjectsController } from "../controllers/project.controller";
 import { body, param } from "express-validator";
 import authMiddleware from "../middlewares/auth.middleware";
 
@@ -7,6 +7,9 @@ const projectRouter = Router()
 
 projectRouter
     .get('/', authMiddleware, getProjectsController)
+    .get('/:name', authMiddleware,
+     param("name").isString(),
+     getProjectUserFromNameController)
     .post('/create',
         authMiddleware,
         body('name').isString()

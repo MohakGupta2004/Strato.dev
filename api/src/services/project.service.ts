@@ -42,40 +42,36 @@ export const getProjects = async (userId: string) => {
     }
 };
 
-export const addUser = async(name: string, email: string, user:{_id: string, email:string})=>{
+export const addUser = async (name: string, email: string, user: { _id: string; email: string }) => {
     try {
-        const userDetails = await User.findOne({
-            email
-        })
-        if(!userDetails){
-            return {
-                message: "User not found"
-            }
+        // Find the user by email
+        const userDetails = await User.findOne({ email });
+        if (!userDetails) {
+            return { message: "User not found" };
         }
-        const addUserDetails = await Project.updateOne({
-            name: name,
-            users:[
-                user._id
-            ]
-        },{
-            $push:{
-                users: userDetails._id
+
+        // Update project by pushing new user ID only if it's not already in the array
+        const addUserDetails = await Project.updateOne(
+            {
+                name: name,
+                users: { $ne: userDetails._id } // Ensures user is not already added
+            },
+            {
+                $push: { users: userDetails._id }
             }
-        })
-        if(!addUserDetails){
-            return {
-                message: "Error while adding another user"
-            }
+        );
+
+        // Check if a document was actually modified
+        if (addUserDetails.modifiedCount === 0) {
+            return { message: "User already exists or project not found" };
         }
-        return {
-            message: addUser
-        }
+
+        return { message: "User added successfully" };
     } catch (error: any) {
-        return {
-            message: error.message
-        }
+        return { message: error.message };
     }
-}
+};
+
 
 export const checkProjectUser = async(name: string, user:{_id: string, email: string})=>{
     try {
@@ -95,3 +91,27 @@ export const checkProjectUser = async(name: string, user:{_id: string, email: st
         console.log(error)
     }
 }
+
+export const getProjectFromName = async (name: string) => {
+    try {
+        const projectDetails = await Project.findOne({ name });
+        
+        if (!projectDetails) {
+            return { message: "Not Found" };
+        }
+
+        // Using Promise.all to resolve the mapped promises
+        const emails = await Promise.all(
+            projectDetails.users.map(async (userId) => {
+                console.log("Fetching user:", userId);
+                const user = await User.findOne({ _id: userId });
+                return user?.email || "Unknown Email";
+            })
+        );
+
+        return emails;
+    } catch (error) {
+        console.error("Error fetching project:", error);
+        return { message: "Internal Server Error" };
+    }
+};

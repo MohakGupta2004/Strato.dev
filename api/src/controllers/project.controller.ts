@@ -1,5 +1,5 @@
 import { validationResult } from "express-validator";
-import { addUser, checkProjectUser, createProject, getProjects } from "../services/project.service";
+import { addUser, checkProjectUser, createProject, getProjectFromName, getProjects } from "../services/project.service";
 import express from 'express'
 
 export const createProjectController = async(req: express.Request, res: express.Response)=>{
@@ -58,7 +58,7 @@ export const addUserController = async (req: express.Request, res: express.Respo
         return
      }
      res.status(200).json({
-        message: "Added"
+        message: result
      })
    } catch (error) {
     console.log(error)
@@ -84,4 +84,24 @@ export const checkProjectUserController = async (req: express.Request, res: expr
     } catch (error) {
         console.log(error)
     }
+}
+
+export const getProjectUserFromNameController = async(req: express.Request, res: express.Response)=>{
+    try {
+        const errors = validationResult(req)
+        if(!errors.isEmpty()){
+            res.status(400).json(errors)
+        }    
+        const {name} = req.params
+        if(!name){
+            res.status(400).json({
+                message: "Name doesn't exist"
+            })
+        }
+        const result = await getProjectFromName(name)
+        res.status(200).json(result)
+    } catch (error) {
+        console.log(error)
+    }
+    
 }

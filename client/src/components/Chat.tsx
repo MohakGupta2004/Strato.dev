@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Users } from "./Groups";
+import { Plus, X } from "lucide-react";
+import { api } from "../utils/api";
+
 const Chat = () => {
+  const authResult = new URLSearchParams(window.location.search); 
+  const projectName = authResult.get('name')  
     const [messages, setMessages] = useState([
       { id: 1, text: "Can be verified on any platform using docker", sender: "other" },
       { id: 2, text: "Your error message says permission denied, npm global installs must be given root privileges.", sender: "me" },
@@ -10,9 +15,9 @@ const Chat = () => {
   
     const [newMessage, setNewMessage] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [userAddModal, setUserAddModal] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
   
-    // Scroll to the bottom when a new message is added
     useEffect(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
@@ -53,6 +58,14 @@ const Chat = () => {
                 <span className="text-lg text-gray-600">Junior Developer</span>
               </div>
             </div>
+
+            {/* Plus Button */}
+            <button 
+              className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-400 focus:outline-none transition-all cursor-pointer"
+              onClick={() => setUserAddModal(true)}
+            >
+              <Plus size={20} />
+            </button>
           </div>
   
           {/* Messages Section */}
@@ -100,13 +113,57 @@ const Chat = () => {
         </div>
   
         {/* Users Sliding Window */}
-        <Users isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+        <Users isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} projectName={projectName} />
+
+        {/* User Add Modal */}
+        <UserAddModal isOpen={userAddModal} onClose={() => setUserAddModal(false)} projectName={projectName}/>
       </div>
     );
   };
   
-  
-
-
+// User Add Modal - Centered Popup with Background Blur
+function UserAddModal({ isOpen, onClose, projectName }: { isOpen: boolean; onClose: () => void, projectName: string | null}) {
+  const [user, setUser] = useState("")
+  const [message, setMessage] = useState("")
+  return (
+    <>
+      {isOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Add Collaborator</h2>
+              <button onClick={onClose} className="text-gray-500 hover:text-gray-700 cursor-pointer">
+                <X size={20} />
+              </button>
+            </div>
+            <input
+              type="text"
+              placeholder="Enter username or email..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e)=>setUser(e.target.value)}
+            />
+            <button
+              className="mt-4 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition-all cursor-pointer"
+              onClick={()=>{
+                api.post(`/project/add`,{
+                  name: projectName,
+                  email:user
+                }).then((result)=>{
+                  setMessage(result.data.message.message)
+                })
+                setTimeout(()=>{
+                  onClose()
+                },2000)
+              }}
+            >
+              Add
+            </button>
+            {message && <p className="text-center">{message}</p>}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 export default Chat;
