@@ -84,9 +84,14 @@ export const checkProjectUser = async(name: string, user:{_id: string, email: st
         })
         console.log("YOOOOOOO", checkProjectUserDetails)
         if(!checkProjectUserDetails){
-            return false
+            return {
+                message: false,
+            }
         }
-        return true
+        return {
+            message: true,
+            id: checkProjectUserDetails._id
+        }
     } catch (error) {
         console.log(error)
     }

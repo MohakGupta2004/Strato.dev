@@ -10,7 +10,8 @@ app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 app.use(cookieParser())
 app.use(cors({
-  origin: "http://localhost:5173"
+  origin: process.env.FRONTEND_URL,
+  credentials: true 
 }))
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/project', projectRouter)
