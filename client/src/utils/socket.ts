@@ -27,10 +27,6 @@ export const initializeSocket = (projectId: string) => {
     console.warn("⚠️ WebSocket Disconnected:", reason);
   });
 
-  socketInstance.on("connect_error", (err) => {
-    console.error("❌ Connection Error:", err);
-  });
-
   return socketInstance;
 };
 

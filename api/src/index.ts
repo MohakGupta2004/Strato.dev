@@ -24,6 +24,9 @@ io.on("connection", (socket: AuthenticatedSocket) => {
   socket.on('project-message', (data)=>{
     io.to(socket.project?._id as string).emit('project-message',data)
   })
+  socket.on('disconnect', ()=>{
+    socket.leave(socket.project?._id as string)
+  })
 });
 
 server.listen(PORT, () => {

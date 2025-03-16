@@ -6,19 +6,21 @@ import { initializeSocket, receiveMessage, sendMessage, disconnectSocket } from 
 
 const Chat = ({ projectId }: { projectId: string }) => {
   const authResult = new URLSearchParams(window.location.search);
-  const projectName = authResult.get('name');
+  const projectName = authResult.get("name");
 
   const [messages, setMessages] = useState<{ id: number; text: string; sender: string; name: string }[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userAddModal, setUserAddModal] = useState(false);
   const [user, setUser] = useState<string | null>(null);
-  
+  const [response, setResponse] = useState("");
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   /** ✅ Fetch user on mount */
   useEffect(() => {
-    api.get('/auth/profile')
+    api
+      .get("/auth/profile")
       .then((result) => {
         console.log("User Email:", result.data.message.email);
         setUser(result.data.message.email);
@@ -30,26 +32,60 @@ const Chat = ({ projectId }: { projectId: string }) => {
   useEffect(() => {
     if (!user) return; // Ensure user is loaded before connecting to the socket
 
-    initializeSocket(projectId);
+    const socket = initializeSocket(projectId);
 
-    receiveMessage("project-message", (data) => {
+    receiveMessage("project-message", async (data) => {
       console.log("Received:", data);
+        // Append user's message
       setMessages((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          text: data.message,
-          sender: data.sender,
-          name: data.sender === user ? "me" : "others",
-        },
-      ]);
-    });
+          ...prev,
+          {
+            id: prev.length + 1,
+            text: data.message,
+            sender: data.sender,
+            name: data.sender === user ? "me" : "others",
+          },
+        ]);
+      
+        // AI Response Handling
+        if (data.message.startsWith("@ai ")) {
+          const aiPrompt = data.message.slice(4);
+          
+          try {
+            const res = await api.post("/ai", { prompt: aiPrompt });
+      
+            // Ensure full AI response is captured
+            const aiMessage = res.data.text;
+      
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: prev.length + 1,
+                text: aiMessage, // ✅ Ensure entire AI response is stored
+                sender: "AI",
+                name: "others",
+              },
+            ]);
+            setResponse(JSON.stringify(res.data))
+          } catch (err) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: prev.length + 1,
+                text: "⚠️ AI Error: Unable to process request.",
+                sender: "System",
+                name: "others",
+              },
+            ]);
+          }
+        }
+      });
 
     return () => {
       console.log("Disconnecting socket...");
-      disconnectSocket(); // ✅ Cleanup to avoid duplicate event listeners
+      disconnectSocket(); // ✅ Cleanup on unmount
     };
-  }, [user]); // ✅ Runs only when `user` is available
+  }, [user, projectId]);
 
   /** ✅ Scroll to latest message */
   useEffect(() => {
@@ -78,7 +114,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
               </span>
               <img
                 onClick={() => setIsModalOpen(true)}
-                src="https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg?t=st=1742070777~exp=1742074377~hmac=5c30c9257970b1ad1e91540eb6a5a5f2b8f40c4e9701af02992ec57310aa1b2c&w=740"
+                src="https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"
                 alt="User Avatar"
                 className="w-10 sm:w-16 h-10 sm:h-16 rounded-full cursor-pointer"
               />
@@ -100,7 +136,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
             <div key={msg.id} className={`chat-message flex ${msg.name === "me" ? "justify-end" : ""}`}>
               <div className={`flex flex-col space-y-2 text-md max-w-xs mx-2 ${msg.name === "me" ? "order-1 items-end" : "order-2 items-start"}`}>
                 <div className={`px-4 py-2 rounded-lg ${msg.name === "me" ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-600"}`}>
-                <p className={msg.name === "me"?"text-xs text-blue-950":"text-xs text-gray-500"}>{msg.sender}</p>
+                  <p className="text-xs text-gray-500">{msg.sender}</p>
                   {msg.text}
                 </div>
               </div>
@@ -135,14 +171,18 @@ const Chat = ({ projectId }: { projectId: string }) => {
 
       {/* User Add Modal */}
       <UserAddModal isOpen={userAddModal} onClose={() => setUserAddModal(false)} projectName={projectName} />
+
+      {/* AI Response Display */}
+      <div>{response}</div>
     </div>
   );
 };
-  
+
 // User Add Modal - Centered Popup with Background Blur
-function UserAddModal({ isOpen, onClose, projectName }: { isOpen: boolean; onClose: () => void, projectName: string | null}) {
-  const [user, setUser] = useState("")
-  const [message, setMessage] = useState("")
+function UserAddModal({ isOpen, onClose, projectName }: { isOpen: boolean; onClose: () => void; projectName: string | null }) {
+  const [user, setUser] = useState("");
+  const [message, setMessage] = useState("");
+
   return (
     <>
       {isOpen && (
@@ -154,24 +194,12 @@ function UserAddModal({ isOpen, onClose, projectName }: { isOpen: boolean; onClo
                 <X size={20} />
               </button>
             </div>
-            <input
-              type="text"
-              placeholder="Enter username or email..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onChange={(e)=>setUser(e.target.value)}
-            />
+            <input type="text" placeholder="Enter username or email..." className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" onChange={(e) => setUser(e.target.value)} />
             <button
               className="mt-4 w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition-all cursor-pointer"
-              onClick={()=>{
-                api.post(`/project/add`,{
-                  name: projectName,
-                  email:user
-                }).then((result)=>{
-                  setMessage(result.data.message.message)
-                })
-                setTimeout(()=>{
-                  onClose()
-                },2000)
+              onClick={() => {
+                api.post(`/project/add`, { name: projectName, email: user }).then((result) => setMessage(result.data.message.message));
+                setTimeout(() => onClose(), 2000);
               }}
             >
               Add
