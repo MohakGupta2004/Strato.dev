@@ -43,6 +43,31 @@ IMPORTANT: Always use this exact JSON structure with "file" and "contents" prope
 
 export const aiResponse = async (prompt: string) => {
   try {
+    // Check if this is just a simple conversational message
+    const isConversational = /^(hi|hello|hey|how are you|what's up|good morning|good afternoon|good evening|thanks|thank you)/i.test(prompt.trim());
+    
+    if (isConversational) {
+      // For simple conversational messages, use a different model setup
+      const conversationModel = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1000,
+        },
+        // No system instruction for conversational responses
+      });
+      
+      const result = await conversationModel.generateContent(prompt);
+      const responseText = result.response.text();
+      
+      // Directly return the text without JSON wrapping
+      return JSON.stringify({
+        text: responseText,
+        fileTree: {} // Empty fileTree
+      });
+    }
+    
+    // Regular code generation flow for non-conversational messages
     const timeoutPromise = new Promise((_, reject) => 
       setTimeout(() => reject(new Error('AI request timed out')), 30000)
     );
@@ -60,6 +85,12 @@ export const aiResponse = async (prompt: string) => {
     
     try {
       const parsed = JSON.parse(responseText);
+      
+      // Ensure text field isn't too long
+      if (parsed.text && parsed.text.length > 300) {
+        parsed.text = parsed.text.substring(0, 300) + "...";
+      }
+      
       return JSON.stringify(parsed);
     } catch (e) {
       console.log('Response was not valid JSON, attempting to extract JSON portion');

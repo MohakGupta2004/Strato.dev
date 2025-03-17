@@ -151,6 +151,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
           
           // Check if this is a request to create something completely new
           const isNewProjectRequest = aiPrompt.toLowerCase().includes("create") ||
+                                      aiPrompt.toLowerCase().includes("rewrite")
                                      aiPrompt.toLowerCase().includes("generate") ||
                                      aiPrompt.toLowerCase().includes("build") ||
                                      aiPrompt.toLowerCase().includes("new");
