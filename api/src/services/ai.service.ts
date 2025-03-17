@@ -6,122 +6,86 @@ const model = genAI.getGenerativeModel({
   generationConfig:{
     responseMimeType: "application/json",
     temperature: 0.4,
+    maxOutputTokens: 8192,
   },
   systemInstruction: `
-You are a **senior full-stack developer with 7 years of experience**, specializing in **clean, modular, and production-ready solutions** for web applications.
+You are a senior full-stack developer creating clean, production-ready code.
 
-🔹 **Key Responsibilities:**
-- **Write maintainable, scalable, and optimized code** for full-stack applications.
-- **Provide multiple diverse implementations** (different stacks, architectures, and best practices).
-- **Ensure modularity, security, and performance** in every solution.
-- **Return only the code.** No explanations, no additional details.
-
-🔹 **How You Respond:**
-- **Frontend, Backend, Database, Deployment** – complete implementations.
-- **Multiple code versions** to cover different stacks.
-- **Security & scalability best practices** in every approach.
-- **Alternative technologies** where applicable.
-
-🔹 **Output Format:**
-    **Code Implementations** (Each version fully written).  
-    **Deployment Instructions** (How to run the project).  
-
-
-  Examples: 
-  Request: "Create a simple express server"
-  <example>
-
-  response: {
-
-  "text": "this is you fileTree structure of the express server",
+Always respond in this JSON format:
+{
+  "text": "Brief description of what you created",
   "fileTree": {
-      "app.js": {
-          file: {
-              contents: "
-              const express = require('express');
-
-              const app = express();
-
-
-              app.get('/', (req, res) => {
-                  res.send('Hello World!');
-              });
-
-
-              app.listen(3000, () => {
-                  console.log('Server is running on port 3000');
-              })
-              "
-          
-      },
+    "filename.ext": {
+      "file": {
+        "contents": "file content here"
+      }
+    },
+    "another-file.ext": {
+      "file": {
+        "contents": "more content here"
+      }
+    }
   },
-
-      "package.json": {
-          file: {
-              contents: "
-
-              {
-                  "name": "temp-server",
-                  "version": "1.0.0",
-                  "main": "index.js",
-                  "scripts": {
-                      "test": "echo \"Error: no test specified\" && exit 1"
-                  },
-                  "keywords": [],
-                  "author": "",
-                  "license": "ISC",
-                  "description": "",
-                  "dependencies": {
-                      "express": "^4.21.2"
-                  }
-}
-
-              
-              "
-              
-              
-
-          },
-
-      },
-
-  },
-  "codeType": "javascript"
+  "codeType": "javascript or typescript",
   "buildCommand": {
-      mainItem: "npm",
-          commands: [ "install" ]
+    "mainItem": "npm",
+    "commands": ["install"]
   },
-
   "startCommand": {
-      mainItem: "node",
-          commands: [ "app.js" ]
+    "mainItem": "node or npm",
+    "commands": ["start or filename.js"]
   }
 }
 
-  user:Create an express application 
- 
-  </example>
-
-
-  
-     <example>
-
-     user:Hello 
-     response:{
-     "text":"Hello, How can I help you today?"
-     }
-     
-     </example>
-  
-IMPORTANT : don't use file name like routes/index.js
-IMPORTANT : Always provide values in the example format like fileTree and json like format.
-  
-
-🎯 **Your Goal: Generate high-quality, ready-to-deploy code in every response.**  
+IMPORTANT: Always use this exact JSON structure with "file" and "contents" properties.
 `,
 });
 
 export const aiResponse = async (prompt: string) => {
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  try {
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('AI request timed out')), 30000)
+    );
+    
+    const result = await Promise.race([
+      model.generateContent(prompt),
+      timeoutPromise
+    ]) as any;
+    
+    if (!result || !result.response) {
+      throw new Error('Empty response from AI service');
+    }
+    
+    const responseText = result.response.text();
+    
+    try {
+      const parsed = JSON.parse(responseText);
+      return JSON.stringify(parsed);
+    } catch (e) {
+      console.log('Response was not valid JSON, attempting to extract JSON portion');
+      
+      const jsonPattern = /(\{[\s\S]*\})/;
+      const match = responseText.match(jsonPattern);
+      
+      if (match && match[1]) {
+        try {
+          const extracted = JSON.parse(match[1]);
+          return JSON.stringify(extracted);
+        } catch (innerError) {
+          console.error('Failed to parse extracted JSON:', innerError);
+        }
+      }
+      
+      return JSON.stringify({
+        text: responseText.substring(0, 1000),
+        fileTree: {}
+      });
+    }
+  } catch (error) {
+    console.error("AI service error:", error);
+    return JSON.stringify({
+      text: "Sorry, I encountered an error processing your request. Please try again with a simpler prompt.",
+      fileTree: {}
+    });
+  }
 };

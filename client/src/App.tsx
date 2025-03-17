@@ -1,12 +1,11 @@
-import { AppRoutes } from "./routes/AppRoutes"
 import { UserProvider } from "./context/user.context"
-function App() {
+import { AppRoutes } from "./routes/AppRoutes"
+
+function App() {  
   return (
-    <>
     <UserProvider>
       <AppRoutes/>
     </UserProvider>
-    </>
   )
 }
 
