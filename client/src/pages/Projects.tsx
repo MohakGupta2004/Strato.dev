@@ -35,7 +35,7 @@ export const Projects = () => {
   return (
     <>
       {isProjectExist.message ? (
-        <div className="w-full">
+        <div className="">
           <Chat projectId={isProjectExist.id} />
         </div>
       ) : (

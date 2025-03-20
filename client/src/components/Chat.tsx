@@ -6,6 +6,7 @@ import { initializeSocket, receiveMessage, sendMessage, disconnectSocket } from 
 import { UserAddModal } from "./UserModal";
 import { getWebContainer } from "../utils/webContainer";
 import { WebContainer } from "@webcontainer/api";
+import { Editor } from "@monaco-editor/react";
 type FileNode = {
   file?: { contents: string };
   [key: string]: any;
@@ -121,71 +122,68 @@ const Chat = ({ projectId }: { projectId: string }) => {
   };
   
   return (
-    <div className="relative flex h-screen">
+    <div className=" relative flex h-screen">
       {/* Chat Interface */}
-      <div className={`flex-1 p-2 sm:p-6 flex flex-col transition-all duration-300 ${isModalOpen ? "md:w-2/3" : "w-full"}`}>
-        {/* Header */}
-        <div className="flex sm:items-center justify-between py-3 border-b-2 border-gray-200">
-          <div className="relative flex items-center space-x-4">
-            <div className="relative">
-              <span className="absolute text-green-500 right-0 bottom-0">
-                <svg width="20" height="20">
-                  <circle cx="8" cy="8" r="8" fill="currentColor"></circle>
-                </svg>
-              </span>
-              <img
-                onClick={() => setIsModalOpen(true)}
-                src="https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg?t=st=1742070777~exp=1742074377~hmac=5c30c9257970b1ad1e91540eb6a5a5f2b8f40c4e9701af02992ec57310aa1b2c&w=740"
-                alt="User Avatar"
-                className="w-10 sm:w-16 h-10 sm:h-16 rounded-full cursor-pointer"
-              />
-            </div>
-          </div>
+      <div className={`flex-1 p-4 sm:p-6 flex flex-col transition-all duration-300 ${isModalOpen ? "md:w-2/3" : "w-full"} bg-gray-900 shadow-md`}>
+  {/* Header */}
+  <div className="flex items-center justify-between py-4 px-4 bg-gray-800 rounded-t-lg shadow-sm">
+    <div className="flex items-center space-x-3">
+      <div className="relative">
+        {/* Online Status Indicator */}
+        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full"></span>
+        <img
+          onClick={() => setIsModalOpen(true)}
+          src="/proxy-image/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"
+          alt="User Avatar"
+          className="w-12 h-12 sm:w-16 sm:h-16 rounded-full cursor-pointer shadow-lg"
+        />
+      </div>
+      <span className="text-lg font-semibold text-white">Chat</span>
+    </div>
 
-          {/* Plus Button */}
-          <button
-            className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-400 focus:outline-none transition-all cursor-pointer"
-            onClick={() => setUserAddModal(true)}
-          >
-            <Plus size={20} />
-          </button>
-        </div>
+    {/* Add User Button */}
+    <button className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-500 focus:outline-none transition-all shadow-md" onClick={() => setUserAddModal(true)}>
+      <Plus size={20} />
+    </button>
+  </div>
 
-        {/* Messages Section */}
-        <div className="flex flex-col space-y-4 p-3 overflow-y-auto h-full">
-          {messages.map((msg) => (
-            <div key={msg.id} className={`chat-message flex ${msg.name === "me" ? "justify-end" : ""}`}>
-              <div className={`flex flex-col space-y-2 text-md max-w-xs mx-2 ${msg.name === "me" ? "order-1 items-end" : "order-2 items-start"}`}>
-                <div className={`px-4 py-2 rounded-lg ${msg.name === "me" ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-600"}`}>
-                <p className={msg.name === "me"?"text-xs text-blue-950":"text-xs text-gray-500"}>{msg.sender}</p>
-                  {msg.text}
-                </div>
-              </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Section */}
-        <div className="border-t-2 border-gray-200 px-4 pt-4">
-          <div className="relative flex">
-            <input
-              type="text"
-              placeholder="Write your message..."
-              className="w-full focus:outline-none text-gray-600 placeholder-gray-600 pl-12 bg-gray-200 rounded-md py-3"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessageButton()}
-            />
-            <button
-              onClick={sendMessageButton}
-              className="ml-2 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-400 focus:outline-none"
-            >
-              Send
-            </button>
+  {/* Messages Section */}
+  <div className="flex flex-col space-y-3 p-4 overflow-y-auto h-full bg-gray-800 rounded-b-lg">
+    {messages.map((msg) => (
+      <div key={msg.id} className={`chat-message flex ${msg.name === "me" ? "justify-end" : "justify-start"}`}>
+        <div className={`flex flex-col space-y-1 text-md max-w-xs mx-2 ${msg.name === "me" ? "items-end" : "items-start"}`}>
+          <div className={`px-4 py-3 rounded-2xl shadow-sm ${msg.name === "me" ? "bg-blue-500 text-white" : "bg-gray-700 text-gray-300"}`}>
+            <p className={msg.name === "me" ? "text-xs text-blue-200" : "text-xs text-gray-400"}>{msg.sender}</p>
+            {msg.text}
           </div>
         </div>
       </div>
+    ))}
+    <div ref={messagesEndRef} />
+  </div>
+
+  {/* Input Section */}
+  <div className="border-t border-gray-700 px-4 py-3 bg-gray-800 shadow-md rounded-b-lg">
+    <div className="relative flex items-center">
+      <input
+        type="text"
+        placeholder="Type a message..."
+        className="w-full text-white placeholder-gray-400 px-4 py-3 bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+        value={newMessage}
+        onChange={(e) => setNewMessage(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && sendMessageButton()}
+      />
+      <button
+        onClick={sendMessageButton}
+        className="ml-2 px-5 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-500 focus:outline-none shadow-lg transition-transform transform hover:scale-105"
+      >
+        Send
+      </button>
+    </div>
+  </div>
+</div>
+
+
 
       {/* Users Sliding Window */}
       <Users isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} projectName={projectName} />
@@ -194,100 +192,139 @@ const Chat = ({ projectId }: { projectId: string }) => {
       <UserAddModal isOpen={userAddModal} onClose={() => setUserAddModal(false)} projectName={projectName} />
 
 
-      <section className="bg-gray-900 text-white flex h-screen">
-      {/* Sidebar - File Explorer */}
-      <div className="w-64 bg-gray-800 p-4 border-r border-gray-700">
-        <h2 className="text-sm font-semibold mb-3 text-gray-400">EXPLORER</h2>
-        {Object.keys(fileTree).map((fileName) => (
+      <section className="bg-gray-900 text-white flex h-screen w-2/3">
+  {/* Sidebar - File Explorer */}
+  <div className="w-64 bg-gray-800/90 backdrop-blur-md p-4 border-r border-gray-700 shadow-lg">
+    <h2 className="text-sm font-semibold mb-3 text-gray-400">EXPLORER</h2>
+    {Object.keys(fileTree).map((fileName) => (
+      <div
+        key={fileName}
+        className="flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-700/80 transition-all duration-200"
+        onClick={() => {
+          setCurrentFile(fileName);
+          if (!openFiles.includes(fileName)) {
+            setOpenFiles([...openFiles, fileName]);
+          }
+        }}
+      >
+        <FileText size={16} className="mr-2 text-gray-300" />
+        <span className="text-sm">{fileName}</span>
+      </div>
+    ))}
+  </div>
+
+  {/* Main Panel */}
+  <div className="flex flex-col flex-1">
+    {/* Open File Tabs */}
+    {openFiles.length > 0 && (
+      <div className="flex items-center bg-gray-800 px-4 border-b border-gray-700">
+        {openFiles.map((file) => (
           <div
-            key={fileName}
-            className="flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-700 transition"
-            onClick={() => {
-              setCurrentFile(fileName);
-              if (!openFiles.includes(fileName)) {
-                setOpenFiles([...openFiles, fileName]);
-              }
-            }}
+            key={file}
+            className={`flex items-center px-4 py-2 rounded-t-md cursor-pointer transition-all duration-200 ${
+              file === currentFile ? "bg-blue-600 text-white shadow-md" : "text-gray-400 hover:bg-gray-700"
+            }`}
+            onClick={() => setCurrentFile(file)}
           >
-            <FileText size={16} className="mr-2 text-gray-400" />
-            <span className="text-sm">{fileName}</span>
+            <span className="text-sm">{file}</span>
+            <button
+              className="ml-2 text-gray-400 hover:text-red-500 transition"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenFiles(openFiles.filter((item) => item !== file));
+                if (currentFile === file) setCurrentFile(null);
+              }}
+            >
+              <X size={16} />
+            </button>
           </div>
         ))}
       </div>
+    )}
 
-      {/* Main Panel */}
-      <div className="flex flex-col flex-1">
-        {/* Open File Tabs */}
+    {/* Code Editor */}
+    <div className="flex-1 p-4 bg-gray-900 flex-grow">
+      <div className={currentFile?"relative h-full":'h-full'}>
+        {/* Run Button */}
+        <button
+          className="cursor-pointer absolute right-4 top-9 w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300"
+          onClick={async () => {
+            await webContainer?.mount(fileTree);
 
-        {openFiles.length > 0 && (
-          <div className="flex items-center bg-gray-800 px-4 border-b border-gray-700">
-            {openFiles.map((file) => (
-              <div
-                key={file}
-                className={`flex items-center px-4 py-2 rounded-t-md cursor-pointer ${
-                  file === currentFile ? "bg-gray-900 text-blue-400" : "text-gray-400"
-                }`}
-                onClick={() => setCurrentFile(file)}
-              >
-                <span className="text-sm">{file}</span>
-                <button
-                  className="ml-2 text-gray-500 hover:text-red-500"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenFiles(openFiles.filter((item) => item !== file));
-                    if (currentFile === file) setCurrentFile(null);
-                  }}
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+            const installProcess = await webContainer?.spawn('npm', ['i']);
+            installProcess?.output?.pipeTo(
+              new WritableStream({
+                write(chunk) {
+                  console.log(chunk);
+                },
+              })
+            );
 
-        {/* Code Editor */}
-        <div className="flex-1 p-4 bg-gray-900">
-        <button className="text-lg" onClick={
-            async ()=>{
-              await webContainer?.mount(fileTree)
-              
-              const installProcess = await webContainer?.spawn('ls')
-              installProcess?.output?.pipeTo(new WritableStream({
-                     write(chunk) {
-                        console.log(chunk)
-                    }
-               }))
-            }
+            const runProcess = await webContainer?.spawn('npm', ['start']);
+            runProcess?.output?.pipeTo(
+              new WritableStream({
+                write(chunk) {
+                  console.log(chunk);
+                },
+              })
+            );
+          }}
+        >
+          ▶
+        </button>
 
-        }
-        
-        >ls</button>
-          {currentFile ? (
-            <>
-              <h1 className="text-sm font-semibold text-gray-400">{currentFile}</h1>
-              <textarea
-                className="w-full h-[90%] bg-gray-800 text-white p-3 rounded-md font-mono text-sm border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={fileTree[currentFile]?.file.contents || ""}
-                onChange={(e) =>
-                  setFileTree({
-                    ...fileTree,
-                    [currentFile]: { 
-                      file:{
-                        contents: e.target.value
-                      } 
-                    },
-                  })
-                }
-              />
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
-              No file open
-            </div>
-          )}
-        </div>
+        {/* File Name */}
+        <h1 className="text-sm font-semibold text-gray-400 mb-2">{currentFile}</h1>
+
+        {/* Code Editor Area */}
+        <div className="w-full h-[90%] border border-gray-700 rounded-lg shadow-md">
+      <Editor
+        height="100%"
+        width="100%"
+        language="javascript"
+        className="pt-15"
+        theme="custom-dark"
+        value={currentFile ? fileTree[currentFile]?.file?.contents || "" : ""}
+        onChange={(value) => {
+          if (currentFile && value !== undefined) {
+            setFileTree({
+              ...fileTree,
+              [currentFile]: {
+                file: {
+                  contents: value,
+                },
+              },
+            });
+          }
+        }}
+        options={{
+          minimap: { enabled: false },
+          fontSize: 14,
+          lineNumbers: 'on',
+          automaticLayout: true,
+          wordWrap: 'on'
+        }}
+        beforeMount={(monaco) => {
+          // Define a custom theme that mimics Tailwind's bg-gray-800 (#1F2937)
+          monaco.editor.defineTheme('custom-dark', {
+            base: 'vs-dark',
+            inherit: true,
+            rules: [],
+            colors: {
+              'editor.background': '#1F2937', // Tailwind bg-gray-800
+              'editor.foreground': '#FFFFFF', // White text
+              // You can add additional colors here if needed
+            },
+          });
+        }}
+      />
+    </div>
+
       </div>
-    </section>
+    </div>
+  </div>
+</section>
+
 
     </div>
   );
