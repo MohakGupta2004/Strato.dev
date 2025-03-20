@@ -41,6 +41,11 @@ const Chat = ({ projectId }: { projectId: string }) => {
   const [openFiles, setOpenFiles] = useState<Array<string>>([])
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [webContainer, setWebContainer] = useState<WebContainer|null>(null)
+  const [iframeUrl, setIframeUrl] = useState<string|null>(null)
+  const [newFileName, setNewFileName] = useState<string>("");
+  const [renameFileName, setRenameFileName] = useState<string>("");
+  const [fileToRename, setFileToRename] = useState<string | null>(null);
+  const [currenProcess, setCurrentProcess] = useState<any>(null)
   /** ✅ Fetch user on mount */
   useEffect(() => {
     api.get('/auth/profile')
@@ -81,10 +86,10 @@ const Chat = ({ projectId }: { projectId: string }) => {
         try {
           const result = await api.post("/ai", { prompt: data.message.slice(4) });
           console.log("AI FileTree Response:", result.data); // ✅ Debug AI response
-          const parsedData = typeof result.data === "string" ? JSON.parse(result.data) : result.data;
-          if (parsedData.fileTree) {
+          const parsedData = typeof result.data === "string" ? JSON.parse(result.data) : result.data;          if (parsedData.fileTree) {
+            console.log("Flatten: ",flattenFileTree(parsedData.fileTree))
             webContainer?.mount(flattenFileTree(parsedData.fileTree))  
-            setFileTree(flattenFileTree(result.data.fileTree)); // ✅ Normalize structure
+            setFileTree(flattenFileTree(parsedData.fileTree)); // ✅ Normalize structure
           }
     
           setMessages((prev) => [
@@ -121,8 +126,29 @@ const Chat = ({ projectId }: { projectId: string }) => {
     setNewMessage("");
   };
   
+  const addFile = () => {
+    if (newFileName.trim() === "") return;
+    const updatedFileTree = {
+      ...fileTree,
+      [newFileName]: { file: { contents: "" } }, // Create a new file with empty contents
+    };
+    setFileTree(updatedFileTree);
+    setNewFileName(""); // Clear input after adding
+  };
+
+  const renameFile = () => {
+    if (fileToRename && renameFileName.trim() !== "") {
+      const updatedFileTree = { ...fileTree };
+      updatedFileTree[renameFileName] = updatedFileTree[fileToRename]; // Copy contents to new name
+      delete updatedFileTree[fileToRename]; // Remove old file
+      setFileTree(updatedFileTree);
+      setFileToRename(null); // Clear the file being renamed
+      setRenameFileName(""); // Clear input after renaming
+    }
+  };
+
   return (
-    <div className=" relative flex h-screen">
+    <div className="w-full relative flex h-screen">
       {/* Chat Interface */}
       <div className={`flex-1 p-4 sm:p-6 flex flex-col transition-all duration-300 ${isModalOpen ? "md:w-2/3" : "w-full"} bg-gray-900 shadow-md`}>
   {/* Header */}
@@ -194,8 +220,45 @@ const Chat = ({ projectId }: { projectId: string }) => {
 
       <section className="bg-gray-900 text-white flex h-screen w-2/3">
   {/* Sidebar - File Explorer */}
-  <div className="w-64 bg-gray-800/90 backdrop-blur-md p-4 border-r border-gray-700 shadow-lg">
+  <div className=" bg-gray-800/90 backdrop-blur-md p-4 border-r border-gray-700 shadow-lg">
     <h2 className="text-sm font-semibold mb-3 text-gray-400">EXPLORER</h2>
+    
+    {/* Add File Input */}
+    <div className="flex mb-2">
+      <input
+        type="text"
+        placeholder="New file name"
+        className="flex-1 p-2 rounded-md bg-gray-700 text-white placeholder-gray-400 w-3/4"
+        value={newFileName}
+        onChange={(e) => setNewFileName(e.target.value)}
+      />
+      <button
+        className="ml-2 p-2 bg-blue-600 text-white rounded-md hover:bg-blue-500"
+        onClick={addFile}
+      >
+        Add
+      </button>
+    </div>
+
+    {/* Rename File Input */}
+    {fileToRename && (
+      <div className="flex mb-2">
+        <input
+          type="text"
+          placeholder="Rename file"
+          className="flex-1 p-2 rounded-md bg-gray-700 text-white placeholder-gray-400"
+          value={renameFileName}
+          onChange={(e) => setRenameFileName(e.target.value)}
+        />
+        <button
+          className="ml-2 p-2 bg-green-600 text-white rounded-md hover:bg-green-500 w-3/4"
+          onClick={renameFile}
+        >
+          Rename
+        </button>
+      </div>
+    )}
+
     {Object.keys(fileTree).map((fileName) => (
       <div
         key={fileName}
@@ -206,9 +269,21 @@ const Chat = ({ projectId }: { projectId: string }) => {
             setOpenFiles([...openFiles, fileName]);
           }
         }}
+        onDoubleClick={() => {
+          setFileToRename(fileName); // Set the file to rename on double-click
+          setRenameFileName(fileName); // Pre-fill the input with the current file name
+        }}
       >
         <FileText size={16} className="mr-2 text-gray-300" />
         <span className="text-sm">{fileName}</span>
+        <i
+          className="ri-edit-line ml-2 text-gray-400 cursor-pointer hover:text-gray-200"
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering the onClick for the file
+            setFileToRename(fileName); // Set the file to rename
+            setRenameFileName(fileName); // Pre-fill the input with the current file name
+          }}
+        ></i>
       </div>
     ))}
   </div>
@@ -244,34 +319,57 @@ const Chat = ({ projectId }: { projectId: string }) => {
 
     {/* Code Editor */}
     <div className="flex-1 p-4 bg-gray-900 flex-grow">
-      <div className={currentFile?"relative h-full":'h-full'}>
+      <div className="relative h-[90%]">
         {/* Run Button */}
         <button
-          className="cursor-pointer absolute right-4 top-9 w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300"
-          onClick={async () => {
-            await webContainer?.mount(fileTree);
+  className="cursor-pointer z-10 absolute right-4 top-9 w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-300"
+  onClick={async () => {
+    try {
+      // Mount the updated fileTree into the container
+      await webContainer?.mount(fileTree);
+      // Install dependencies (npm install)
+      const installProcess = await webContainer?.spawn('npm', ['i']);
+      installProcess?.output?.pipeTo(
+        new WritableStream({
+          write(chunk) {
+            console.log("Install output:", chunk);
+          },
+        })
+      );
+      
+      
+      // Register the server-ready event before starting the process.
+      if(installProcess){
 
-            const installProcess = await webContainer?.spawn('npm', ['i']);
-            installProcess?.output?.pipeTo(
-              new WritableStream({
-                write(chunk) {
-                  console.log(chunk);
-                },
-              })
-            );
+        if(currenProcess){
+          currenProcess.kill()
+        }
+        let runProcess = await webContainer?.spawn('npm', ['start']);
 
-            const runProcess = await webContainer?.spawn('npm', ['start']);
-            runProcess?.output?.pipeTo(
-              new WritableStream({
-                write(chunk) {
-                  console.log(chunk);
-                },
-              })
-            );
-          }}
-        >
-          ▶
-        </button>
+        runProcess?.output?.pipeTo(
+          new WritableStream({
+            write(chunk) {
+              console.log("Run output:", chunk);
+            },
+          })
+        );
+
+        setCurrentProcess(runProcess)
+      }
+      webContainer?.on('server-ready', (port, url) => {
+        console.log("Server ready on port:", port, "URL:", url);
+        setIframeUrl(url);
+      });
+
+      // Spawn the new server process (npm start)
+    } catch (error) {
+      console.error("Error during run button execution:", error);
+    }
+  }}
+>
+  ▶
+</button>
+
 
         {/* File Name */}
         <h1 className="text-sm font-semibold text-gray-400 mb-2">{currentFile}</h1>
@@ -318,11 +416,28 @@ const Chat = ({ projectId }: { projectId: string }) => {
           });
         }}
       />
+      <div>
+      </div>
     </div>
 
       </div>
     </div>
   </div>
+
+        {iframeUrl && webContainer && 
+        <div className="min-w-200">
+        (
+          <div className="flex flex-col h-full w-full">
+            <div className="address-bar w-full">
+              <input type="text" value={iframeUrl} className="bg-black w-full" onChange={(e)=>{
+                setIframeUrl(e.target.value)
+              }} />
+            </div>
+            <iframe src={iframeUrl} className="w-full h-full bg-white"></iframe>
+          </div>
+        )
+          </div>
+      }
 </section>
 
 
