@@ -13,7 +13,11 @@ const projectSchema = new Schema({
             type: Schema.Types.ObjectId,
             ref: "User"
         }
-    ]
+    ],
+    fileTree:{
+      type: Object,
+      default: {}
+    }
 })
 
 export const Project = model("Project",projectSchema) 

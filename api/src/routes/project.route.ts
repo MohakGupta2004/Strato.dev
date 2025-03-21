@@ -1,5 +1,5 @@
 import { Router, query } from "express";
-import { addUserController, checkProjectUserController, createProjectController, getProjectUserFromNameController, getProjectsController } from "../controllers/project.controller";
+import { getFileTree, addUserController, checkProjectUserController, createProjectController, getProjectUserFromNameController, getProjectsController, updateFileTree } from "../controllers/project.controller";
 import { body, param } from "express-validator";
 import authMiddleware from "../middlewares/auth.middleware";
 
@@ -23,6 +23,14 @@ projectRouter
     .post('/check', authMiddleware,
         body("name").isString()
         , checkProjectUserController
+    )
+    .put('/save-filetree', authMiddleware,
+        body('projectId').isString(),
+        body('fileTree').isObject(),
+        updateFileTree)
+    .post('/get-filetree', authMiddleware,
+        body('projectId').isString(),
+        getFileTree
     )
     
 export default projectRouter

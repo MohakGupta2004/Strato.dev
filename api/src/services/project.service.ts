@@ -120,3 +120,38 @@ export const getProjectFromName = async (name: string) => {
         return { message: "Internal Server Error" };
     }
 };
+
+
+export const updateFileTreeService = async (projectId:string, fileTree: Object)=>{
+  try {
+   const updateFileTreeResult = await Project.findOneAndUpdate({_id: projectId}, {
+      fileTree
+    })
+   if(!updateFileTreeResult){
+      return {
+        message: updateFileTreeResult
+      }
+    }
+   return {
+        message: updateFileTreeResult
+      }
+  } catch (error) {
+   console.log(error) 
+  }
+}
+
+export const getFileTreeService = async (projectId:string)=>{
+  try {
+   const getFileTreeResult = await Project.findOne({_id: projectId}).select('fileTree')
+   if(!getFileTreeResult){
+      return {
+        message: getFileTreeResult
+      }
+    }
+   return {
+        message: getFileTreeResult
+      }
+  } catch (error) {
+   console.log(error) 
+  }
+}
