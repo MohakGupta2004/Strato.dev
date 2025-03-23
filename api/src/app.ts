@@ -5,6 +5,7 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import projectRouter from './routes/project.route'
 import aiRouter from './routes/ai.route'
+import gitRouter from './routes/git.route'
 const app = express()
 connectDB()
 app.use(express.json())
@@ -17,6 +18,7 @@ app.use(cors({
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/project', projectRouter)
 app.use('/api/v1/ai', aiRouter)
+app.use('/api/v1/git', gitRouter)
 app.get('/', (req, res)=>{
   res.send("Health Check")
 })

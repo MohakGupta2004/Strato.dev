@@ -104,7 +104,8 @@ const Chat = ({ projectId }: { projectId: string }) => {
         try {
           const result = await api.post("/ai", { prompt: data.message.slice(4) });
           console.log("AI FileTree Response:", result.data); // ✅ Debug AI response
-          const parsedData = typeof result.data === "string" ? JSON.parse(result.data) : result.data; if (parsedData.fileTree) {
+          const parsedData = typeof result.data === "string" ? JSON.parse(result.data) : result.data; 
+          if (parsedData.fileTree) {
             console.log("Flatten: ", flattenFileTree(parsedData.fileTree))
             webContainer?.mount(flattenFileTree(parsedData.fileTree))
             setFileTree(flattenFileTree(parsedData.fileTree)); // ✅ Normalize structure
@@ -122,6 +123,20 @@ const Chat = ({ projectId }: { projectId: string }) => {
           ]);
         } catch (error) {
           console.error("Error processing AI response:", error);
+        }
+      }
+
+      if(data.message.startsWith("@git ")){
+        try {
+          const response = await api.post('/git/create', {
+            repo: data.message.slice(5)
+          })
+          console.log(response.data)
+          webContainer?.mount(response.data)
+          setFileTree(response.data); 
+          saveFileTreeDebounced(response.data)
+        } catch (error) {
+          console.log("GITHUB ERROR", error)
         }
       }
     });
