@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React,{ useEffect, useRef, useState } from "react";
 import { Users } from "./Groups";
 import { FileText, Plus, X } from "lucide-react";
 import { api } from "../utils/api";
@@ -47,6 +47,8 @@ const Chat = ({ projectId }: { projectId: string }) => {
   const [renameFileName, setRenameFileName] = useState<string>("");
   const [fileToRename, setFileToRename] = useState<string | null>(null);
   const [currenProcess, setCurrentProcess] = useState<any>(null)
+  const [loading, setLoading] = useState(true);
+
   /** ✅ Fetch user on mount */
   useEffect(() => {
     api.get('/auth/profile')
@@ -72,11 +74,19 @@ const Chat = ({ projectId }: { projectId: string }) => {
 
     api.post('/project/get-filetree', {
       projectId: projectId
-    }).then((res)=>{
-      setFileTree(res.data.message.fileTree)
-    }).catch((err)=>{
-      console.log(err)
-    })
+    }).then((res) => {
+      if (res.data && res.data.message && res.data.message.fileTree) {
+        setFileTree(res.data.message.fileTree);
+      } else {
+        console.error("Unexpected response structure:", res.data);
+        setFileTree({});
+      }
+      setLoading(false);
+    }).catch((err) => {
+      console.log(err);
+      setFileTree({});
+      setLoading(false);
+    });
 
     receiveMessage("project-message", async (data) => {
       console.log("Received AI response:", data);
@@ -98,6 +108,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
             console.log("Flatten: ", flattenFileTree(parsedData.fileTree))
             webContainer?.mount(flattenFileTree(parsedData.fileTree))
             setFileTree(flattenFileTree(parsedData.fileTree)); // ✅ Normalize structure
+            saveFileTreeDebounced(flattenFileTree(parsedData.fileTree))
           }
 
           setMessages((prev) => [
@@ -181,6 +192,9 @@ const Chat = ({ projectId }: { projectId: string }) => {
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>; // Show a loading indicator
+  }
 
   return (
     <div className="w-full relative flex h-screen">
