@@ -1,4 +1,4 @@
-import React,{ useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Users } from "./Groups";
 import { FileText, Plus, X } from "lucide-react";
 import { api } from "../utils/api";
@@ -7,10 +7,83 @@ import { UserAddModal } from "./UserModal";
 import { getWebContainer } from "../utils/webContainer";
 import { WebContainer } from "@webcontainer/api";
 import { Editor } from "@monaco-editor/react";
+import { getFileNode } from "../utils/getFileNode";
 import { debounce } from 'lodash';
+import { cleanNestedFileTree, updateFileContentsInTree } from "../utils/cleanNestedFileTree";
+
+// FileExplorer Component
+const FileExplorer = ({ fileTree, setCurrentFile, openFiles, setOpenFiles, parentPath = "" }: { 
+  fileTree: Record<string, any>; 
+  setCurrentFile: (file: string) => void; 
+  openFiles: string[]; 
+  setOpenFiles: (files: string[]) => void;
+  parentPath?: string;
+}) => {
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+
+  const toggleFolder = (folderName: string) => {
+    setOpenFolders((prev) => ({
+      ...prev,
+      [folderName]: !prev[folderName], // Toggle folder open state
+    }));
+  };
+
+  return (
+    <div className="p-2">
+      {Object.keys(fileTree).map((name) => {
+        const item = fileTree[name];
+        const fullPath = parentPath ? `${parentPath}/${name}` : name; // Ensure full path
+
+        if (item.directory) {
+          return (
+            <div key={fullPath}>
+              <div
+                className="flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-700/80 transition-all duration-200"
+                onClick={() => toggleFolder(fullPath)}
+              >
+                <FileText size={16} className="mr-2 text-yellow-400" />
+                <span className="text-sm">{name}</span>
+              </div>
+
+              {openFolders[fullPath] && (
+                <div className="ml-4 border-l pl-2">
+                  <FileExplorer 
+                    fileTree={item.directory} 
+                    setCurrentFile={setCurrentFile} 
+                    openFiles={openFiles} 
+                    setOpenFiles={setOpenFiles} 
+                    parentPath={fullPath} // Pass full path
+                  />
+                </div>
+              )}
+            </div>
+          );
+        } else {
+          return (
+            <div
+              key={fullPath}
+              className="flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-700/80 transition-all duration-200"
+              onClick={() => {
+                setCurrentFile(fullPath); // Use full path
+                if (!openFiles.includes(fullPath)) {
+                  setOpenFiles([...openFiles, fullPath]);
+                }
+              }}
+            >
+              <FileText size={16} className="mr-2 text-gray-300" />
+              <span className="text-sm">{name}</span>
+            </div>
+          );
+        }
+      })}
+    </div>
+  );
+};
+
+
 type FileNode = {
-  file?: { contents: string };
-  [key: string]: any;
+  file?: { contents: string }; // File structure
+  [key: string]: any; // Allow for additional properties
 };
 
 type FlatFileTree = Record<string, { file: { contents: string } }>;
@@ -21,8 +94,8 @@ const flattenFileTree = (tree: FileNode, parentPath = "") => {
     const fullPath = parentPath ? `${parentPath}/${key}` : key;
     if (tree[key].file) {
       flatTree[fullPath] = tree[key]; // ✅ Store file content
-    } else {
-      Object.assign(flatTree, flattenFileTree(tree[key], fullPath)); // ✅ Recursive flatten
+    } else if (tree[key].directory) {
+      Object.assign(flatTree, flattenFileTree(tree[key].directory, fullPath)); // ✅ Recursive flatten
     }
   });
   return flatTree;
@@ -104,7 +177,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
         try {
           const result = await api.post("/ai", { prompt: data.message.slice(4) });
           console.log("AI FileTree Response:", result.data); // ✅ Debug AI response
-          const parsedData = typeof result.data === "string" ? JSON.parse(result.data) : result.data; 
+          const parsedData = typeof result.data === "string" ? JSON.parse(result.data) : result.data;
           if (parsedData.fileTree) {
             console.log("Flatten: ", flattenFileTree(parsedData.fileTree))
             webContainer?.mount(flattenFileTree(parsedData.fileTree))
@@ -126,14 +199,14 @@ const Chat = ({ projectId }: { projectId: string }) => {
         }
       }
 
-      if(data.message.startsWith("@git ")){
+      if (data.message.startsWith("@git ")) {
         try {
           const response = await api.post('/git/create', {
             repo: data.message.slice(5)
           })
           console.log(response.data)
           webContainer?.mount(response.data)
-          setFileTree(response.data); 
+          setFileTree(response.data);
           saveFileTreeDebounced(response.data)
         } catch (error) {
           console.log("GITHUB ERROR", error)
@@ -195,16 +268,15 @@ const Chat = ({ projectId }: { projectId: string }) => {
 
   const handleFileChange = async (value: string | undefined) => {
     if (currentFile && value !== undefined) {
-      setFileTree(prev => ({
-        ...prev,
-        [currentFile]: { file: { contents: value } }
-      }));
-
-      saveFileTreeDebounced({
-        ...fileTree,
-        [currentFile]: { file: { contents: value } }
-      });
+      setFileTree(prevTree => updateFileContentsInTree(prevTree, currentFile, value));
+      // Optionally, call your debounced save function with the updated tree
+      saveFileTreeDebounced(updateFileContentsInTree(fileTree, currentFile, value));
     }
+  };
+  
+
+  const isDirectory = (node: any) => {
+    return node && typeof node === 'object' && "directory" in node;
   };
 
   if (loading) {
@@ -323,33 +395,14 @@ const Chat = ({ projectId }: { projectId: string }) => {
             </div>
           )}
 
-          {Object.keys(fileTree).map((fileName) => (
-            <div
-              key={fileName}
-              className="flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-700/80 transition-all duration-200"
-              onClick={() => {
-                setCurrentFile(fileName);
-                if (!openFiles.includes(fileName)) {
-                  setOpenFiles([...openFiles, fileName]);
-                }
-              }}
-              onDoubleClick={() => {
-                setFileToRename(fileName); // Set the file to rename on double-click
-                setRenameFileName(fileName); // Pre-fill the input with the current file name
-              }}
-            >
-              <FileText size={16} className="mr-2 text-gray-300" />
-              <span className="text-sm">{fileName}</span>
-              <i
-                className="ri-edit-line ml-2 text-gray-400 cursor-pointer hover:text-gray-200"
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent triggering the onClick for the file
-                  setFileToRename(fileName); // Set the file to rename
-                  setRenameFileName(fileName); // Pre-fill the input with the current file name
-                }}
-              ></i>
-            </div>
-          ))}
+          {/* File Explorer Component */}
+          <FileExplorer 
+            fileTree={fileTree} 
+            setCurrentFile={setCurrentFile} 
+            openFiles={openFiles} 
+            setOpenFiles={setOpenFiles} 
+          />
+
         </div>
 
         {/* Main Panel */}
@@ -362,7 +415,9 @@ const Chat = ({ projectId }: { projectId: string }) => {
                   key={file}
                   className={`flex items-center px-4 py-2 rounded-t-md cursor-pointer transition-all duration-200 ${file === currentFile ? "bg-blue-600 text-white shadow-md" : "text-gray-400 hover:bg-gray-700"
                     }`}
-                  onClick={() => setCurrentFile(file)}
+                  onClick={() =>{
+                  setCurrentFile(file)
+                }}
                 >
                   <span className="text-sm">{file}</span>
                   <button
@@ -389,7 +444,8 @@ const Chat = ({ projectId }: { projectId: string }) => {
                 onClick={async () => {
                   try {
                     // Mount the updated fileTree into the container
-                    await webContainer?.mount(fileTree);
+                    console.log(fileTree)
+                    await webContainer?.mount(cleanNestedFileTree(fileTree));
                     // Install dependencies (npm install)
                     const installProcess = await webContainer?.spawn('npm', ['i']);
                     installProcess?.output?.pipeTo(
@@ -445,8 +501,11 @@ const Chat = ({ projectId }: { projectId: string }) => {
                   language="javascript"
                   className="pt-15"
                   theme="custom-dark"
-                  value={currentFile ? fileTree[currentFile]?.file?.contents || "" : ""}
-                  onChange={handleFileChange}
+                  value={
+                    currentFile 
+                      ? getFileNode(fileTree, currentFile)?.file?.contents ?? "" 
+                      : ""
+                  }                  onChange={handleFileChange}
                   options={{
                     minimap: { enabled: false },
                     fontSize: 14,
@@ -463,13 +522,10 @@ const Chat = ({ projectId }: { projectId: string }) => {
                       colors: {
                         'editor.background': '#1F2937', // Tailwind bg-gray-800
                         'editor.foreground': '#FFFFFF', // White text
-                        // You can add additional colors here if needed
                       },
                     });
                   }}
                 />
-                <div>
-                </div>
               </div>
 
             </div>
