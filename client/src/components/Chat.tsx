@@ -10,6 +10,8 @@ import { Editor } from "@monaco-editor/react";
 import { getFileNode } from "../utils/getFileNode";
 import { debounce } from 'lodash';
 import { cleanNestedFileTree, updateFileContentsInTree } from "../utils/cleanNestedFileTree";
+import CommitMessageModal from "./CommitMessageModal";
+import PushToGithub from "./PushToGithub";
 
 // FileExplorer Component
 const FileExplorer = ({ fileTree, setCurrentFile, openFiles, setOpenFiles, parentPath = "" }: { 
@@ -104,7 +106,6 @@ const flattenFileTree = (tree: FileNode, parentPath = "") => {
 const Chat = ({ projectId }: { projectId: string }) => {
   const authResult = new URLSearchParams(window.location.search);
   const projectName = authResult.get('name');
-
   const [messages, setMessages] = useState<{ id: number; text: string; sender: string; name: string }[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -121,6 +122,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
   const [fileToRename, setFileToRename] = useState<string | null>(null);
   const [currenProcess, setCurrentProcess] = useState<any>(null)
   const [loading, setLoading] = useState(true);
+  const [repoUrl, setRepoUrl] = useState<string>("")
 
   /** ✅ Fetch user on mount */
   useEffect(() => {
@@ -200,16 +202,22 @@ const Chat = ({ projectId }: { projectId: string }) => {
       }
 
       if (data.message.startsWith("@git ")) {
+        const repo = data.message.slice(5);
+        setRepoUrl(repo);
+        
+        // Store the repo URL in local storage
+        localStorage.setItem(`${projectId}_repoUrl`, repo);
+
         try {
           const response = await api.post('/git/create', {
-            repo: data.message.slice(5)
-          })
-          console.log(response.data)
-          webContainer?.mount(response.data)
+            repo
+          });
+          console.log(response.data);
+          webContainer?.mount(response.data);
           setFileTree(response.data);
-          saveFileTreeDebounced(response.data)
+          saveFileTreeDebounced(response.data);
         } catch (error) {
-          console.log("GITHUB ERROR", error)
+          console.log("GITHUB ERROR", error);
         }
       }
     });
@@ -273,17 +281,17 @@ const Chat = ({ projectId }: { projectId: string }) => {
       saveFileTreeDebounced(updateFileContentsInTree(fileTree, currentFile, value));
     }
   };
-  
-
-  const isDirectory = (node: any) => {
-    return node && typeof node === 'object' && "directory" in node;
-  };
 
   if (loading) {
     return <div>Loading...</div>; // Show a loading indicator
   }
 
   return (
+  <div>
+    <PushToGithub
+      projectId={projectId} 
+      fileTree={fileTree}
+    />
     <div className="w-full relative flex h-screen">
       {/* Chat Interface */}
       <div className={`flex-1 p-4 sm:p-6 flex flex-col transition-all duration-300 ${isModalOpen ? "md:w-2/3" : "w-full"} bg-gray-900 shadow-md`}>
@@ -298,7 +306,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
                 src="/proxy-image/free-vector/businessman-character-avatar-isolated_24877-60111.jpg"
                 alt="User Avatar"
                 className="w-12 h-12 sm:w-16 sm:h-16 rounded-full cursor-pointer shadow-lg"
-              />
+                />
             </div>
             <span className="text-lg font-semibold text-white">Chat</span>
           </div>
@@ -338,7 +346,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
             <button
               onClick={sendMessageButton}
               className="ml-2 px-5 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-500 focus:outline-none shadow-lg transition-transform transform hover:scale-105"
-            >
+              >
               Send
             </button>
           </div>
@@ -367,11 +375,11 @@ const Chat = ({ projectId }: { projectId: string }) => {
               className="flex-1 p-2 rounded-md bg-gray-700 text-white placeholder-gray-400 w-3/4"
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
-            />
+              />
             <button
               className="ml-2 p-2 bg-blue-600 text-white rounded-md hover:bg-blue-500"
               onClick={addFile}
-            >
+              >
               Add
             </button>
           </div>
@@ -385,7 +393,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
                 className="flex-1 p-2 rounded-md bg-gray-700 text-white placeholder-gray-400"
                 value={renameFileName}
                 onChange={(e) => setRenameFileName(e.target.value)}
-              />
+                />
               <button
                 className="ml-2 p-2 bg-green-600 text-white rounded-md hover:bg-green-500 w-3/4"
                 onClick={renameFile}
@@ -401,7 +409,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
             setCurrentFile={setCurrentFile} 
             openFiles={openFiles} 
             setOpenFiles={setOpenFiles} 
-          />
+            />
 
         </div>
 
@@ -412,13 +420,13 @@ const Chat = ({ projectId }: { projectId: string }) => {
             <div className="flex items-center bg-gray-800 px-4 border-b border-gray-700">
               {openFiles.map((file) => (
                 <div
-                  key={file}
-                  className={`flex items-center px-4 py-2 rounded-t-md cursor-pointer transition-all duration-200 ${file === currentFile ? "bg-blue-600 text-white shadow-md" : "text-gray-400 hover:bg-gray-700"
+                key={file}
+                className={`flex items-center px-4 py-2 rounded-t-md cursor-pointer transition-all duration-200 ${file === currentFile ? "bg-blue-600 text-white shadow-md" : "text-gray-400 hover:bg-gray-700"
                     }`}
                   onClick={() =>{
-                  setCurrentFile(file)
-                }}
-                >
+                    setCurrentFile(file)
+                  }}
+                  >
                   <span className="text-sm">{file}</span>
                   <button
                     className="ml-2 text-gray-400 hover:text-red-500 transition"
@@ -427,7 +435,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
                       setOpenFiles(openFiles.filter((item) => item !== file));
                       if (currentFile === file) setCurrentFile(null);
                     }}
-                  >
+                    >
                     <X size={16} />
                   </button>
                 </div>
@@ -459,12 +467,12 @@ const Chat = ({ projectId }: { projectId: string }) => {
 
                     // Register the server-ready event before starting the process.
                     if (installProcess) {
-
+                      
                       if (currenProcess) {
                         currenProcess.kill()
                       }
                       let runProcess = await webContainer?.spawn('npm', ['start']);
-
+                      
                       runProcess?.output?.pipeTo(
                         new WritableStream({
                           write(chunk) {
@@ -503,8 +511,8 @@ const Chat = ({ projectId }: { projectId: string }) => {
                   theme="custom-dark"
                   value={
                     currentFile 
-                      ? getFileNode(fileTree, currentFile)?.file?.contents ?? "" 
-                      : ""
+                    ? getFileNode(fileTree, currentFile)?.file?.contents ?? "" 
+                    : ""
                   }                  onChange={handleFileChange}
                   options={{
                     minimap: { enabled: false },
@@ -550,6 +558,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
 
 
     </div>
+  </div>
   );
 };
 
