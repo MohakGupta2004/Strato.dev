@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Users } from "./Groups";
 import { FileText, Plus, X } from "lucide-react";
 import { api } from "../utils/api";
@@ -10,7 +10,6 @@ import { Editor } from "@monaco-editor/react";
 import { getFileNode } from "../utils/getFileNode";
 import { debounce } from 'lodash';
 import { cleanNestedFileTree, updateFileContentsInTree } from "../utils/cleanNestedFileTree";
-import CommitMessageModal from "./CommitMessageModal";
 import PushToGithub from "./PushToGithub";
 
 // FileExplorer Component
@@ -122,7 +121,6 @@ const Chat = ({ projectId }: { projectId: string }) => {
   const [fileToRename, setFileToRename] = useState<string | null>(null);
   const [currenProcess, setCurrentProcess] = useState<any>(null)
   const [loading, setLoading] = useState(true);
-  const [repoUrl, setRepoUrl] = useState<string>("")
 
   /** ✅ Fetch user on mount */
   useEffect(() => {
@@ -203,7 +201,6 @@ const Chat = ({ projectId }: { projectId: string }) => {
 
       if (data.message.startsWith("@git ")) {
         const repo = data.message.slice(5);
-        setRepoUrl(repo);
         
         // Store the repo URL in local storage
         localStorage.setItem(`${projectId}_repoUrl`, repo);
