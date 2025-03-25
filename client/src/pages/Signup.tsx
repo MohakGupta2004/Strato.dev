@@ -32,7 +32,7 @@ export const Signup = () => {
                   cookie.set("token", result.data?.token);
 
                   setUser(result.data.userObject);
-                  navigate("/");
+                  navigate("/login");
                 } catch (error: any) {
                   setError(error?.response?.statusText || "Something went wrong");
                 }

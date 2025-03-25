@@ -11,25 +11,29 @@ export const Projects = () => {
   const [isProjectExist, setIsProjectExist] = useState<{
     message: boolean;
     id: string;
-  } | null>(null); // ✅ Corrected initialization
+  } | null>(null);
 
   useEffect(() => {
-    if (!value) return; // ✅ Prevent unnecessary API calls
+    if (!value) return;
 
     api
       .post("/project/check", { name: value })
       .then((result) => {
         console.log("PROJECT:", result.data);
-        setIsProjectExist(result.data); // ✅ Ensure the correct response structure
+        setIsProjectExist(result.data);
       })
       .catch((error) => {
         console.error("❌ Error checking project:", error);
-        setIsProjectExist({ message: false, id: "" }); // ✅ Handle API failure
+        setIsProjectExist({ message: false, id: "" });
       });
   }, [value]);
 
   if (isProjectExist === null) {
-    return <div>Loading...</div>; // ✅ Loading state
+    return (
+      <div className="h-screen flex items-center justify-center text-white text-lg">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -39,7 +43,12 @@ export const Projects = () => {
           <Chat projectId={isProjectExist.id} />
         </div>
       ) : (
-        <Navigate to="/" />
+        <div className="h-screen flex flex-col items-center justify-center text-white">
+          <h2 className="text-2xl font-semibold bg-gray-800/80 px-6 py-4 rounded-lg shadow-lg">
+            No projects exist 🚀
+          </h2>
+          <Navigate to="/" />
+        </div>
       )}
     </>
   );

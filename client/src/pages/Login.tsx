@@ -33,7 +33,7 @@ export const Login = () => {
                 localStorage.setItem("token", token);
                 cookie.set("token", token);
                 console.log("Token set, user will update in next render.");
-                navigate("/");
+                navigate("/wallet");
             }
         } catch (error: any) {
             setError(error.response?.data?.message || "Login failed");

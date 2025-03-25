@@ -5,11 +5,13 @@ import { Signup } from '../pages/Signup'
 import { ProtectedRoute } from '../utils/ProtectedRoute.tsx'
 import { Projects } from '../pages/Projects.tsx'
 import Navbar from '../components/Navbar'
-import PushToGithub from '../components/PushToGithub.tsx'
+import Wallet from '../components/Wallet.tsx'
+import ConnectWallet from '../pages/ConnectWallet.tsx'
 
 export const AppRoutes = ()=> {
   return (
     <BrowserRouter>
+      <Wallet>
         <Routes>
         <Route path='/' element={
           <>
@@ -19,6 +21,7 @@ export const AppRoutes = ()=> {
         }></Route>
         <Route path='/login' element={<Login/>}></Route>
         <Route path='/signup' element={<Signup/>}></Route>
+        <Route path='/wallet' element={<ConnectWallet/>}></Route>
         <Route path='/projects' element={
           <>
             {/* <ProtectedRoute component={PushToGithub}/> */}
@@ -26,6 +29,7 @@ export const AppRoutes = ()=> {
           </>
         }></Route>
         </Routes>
+        </Wallet>
     </BrowserRouter>
   )
 }
