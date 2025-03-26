@@ -6,7 +6,7 @@ import {
   getDefaultConfig,
 } from '@rainbow-me/rainbowkit';
 import { WagmiProvider } from 'wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
+import { sepolia, localhost} from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createAuthenticationAdapter } from '@rainbow-me/rainbowkit';
 import { createSiweMessage } from 'viem/siwe';
@@ -15,7 +15,7 @@ import { useState, useMemo, useEffect, ReactNode } from 'react';
 const config = getDefaultConfig({
   appName: 'ai-agent',
   projectId: 'YOUR_PROJECT_ID',
-  chains: [sepolia],
+  chains: [sepolia, localhost],
 });
 
 const AuthAPI = import.meta.env.VITE_API_URL;

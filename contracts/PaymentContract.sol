@@ -30,13 +30,18 @@ contract PaymentContract {
         emit FundsDeposited(msg.sender, msg.value);
     }
     
-    // Function to withdraw deposited funds
-   function withdraw() public payable{
-        payable(address(msg.sender)).transfer(address(this).balance);
+    // Function to withdraw deposited funds (for demonstration; note this withdraws the entire balance)
+    function withdraw() public {
+        uint256 amount = deposits[msg.sender];
+        require(amount > 0, "No funds to withdraw");
+        deposits[msg.sender] = 0;
+        (bool sent, ) = payable(msg.sender).call{value: amount}("");
+        require(sent, "Withdrawal failed");
+        emit FundsWithdrawn(msg.sender, amount);
     }
     
-    // Function to check contract balance
-    function getContractBalance() external view returns (uint256) {
-        return address(this).balance;
+    // New function to check the deposit balance for the calling user
+    function getBalance() external view returns (uint256) {
+        return deposits[msg.sender];
     }
 }

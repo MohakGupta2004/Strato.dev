@@ -5,12 +5,18 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDollarSign } from '@fortawesome/free-solid-svg-icons';
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import GitHubConfigModal from './GitHubConfigModal';
+import DepositFundsModal from './DepositFundsModal';
 
 const Navbar = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [depositFundsModalOpen, setDepositFundsModalOpen] = useState(false);
   const { address, isConnected } = useAccount(); // Get wallet address
   const { disconnect } = useDisconnect(); // Disconnect wallet
   const navigate = useNavigate(); // Navigation hook
+
+  // Sample balance and wallet address for demonstration
+  const balance = 100; // Replace with actual balance logic
+  const walletAddress = address || '0x0'; // Use the connected wallet address
 
   // Redirect to /wallet if not authenticated
   useEffect(() => {
@@ -18,6 +24,15 @@ const Navbar = () => {
       navigate('/wallet'); // Redirect to wallet connection page
     }
   }, [isConnected, navigate]);
+
+  const handleDeposit = () => {
+
+    // Add logic to handle deposit
+  };
+
+  const handleWithdraw = () => {
+    // Add logic to handle withdrawal
+  };
 
   return (
     <nav className="flex justify-between items-center px-6 py-4 bg-gray-900 text-white shadow-md">
@@ -27,7 +42,10 @@ const Navbar = () => {
       {/* Buttons Section */}
       <div className="flex space-x-4">
         {/* Deposit Funds Button */}
-        <button className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition">
+        <button
+          className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+          onClick={() => setDepositFundsModalOpen(true)}
+        >
           <FontAwesomeIcon icon={faDollarSign} className="mr-2" /> Deposit Funds
         </button>
 
@@ -59,6 +77,16 @@ const Navbar = () => {
 
       {/* GitHub Modal */}
       <GitHubConfigModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+      {/* Deposit Funds Modal */}
+      <DepositFundsModal
+        isOpen={depositFundsModalOpen}
+        onClose={() => setDepositFundsModalOpen(false)}
+        balance={balance}
+        walletAddress={walletAddress}
+        onDeposit={handleDeposit}
+        onWithdraw={handleWithdraw}
+      />
     </nav>
   );
 };
