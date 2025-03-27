@@ -7,6 +7,7 @@ import { Projects } from '../pages/Projects.tsx'
 import Navbar from '../components/Navbar'
 import Wallet from '../components/Wallet.tsx'
 import ConnectWallet from '../pages/ConnectWallet.tsx'
+import Landing from '../pages/Landing.tsx'
 
 export const AppRoutes = ()=> {
   return (
@@ -19,6 +20,7 @@ export const AppRoutes = ()=> {
             <ProtectedRoute component={Home}/>
           </>
         }></Route>
+        <Route path='/landing' element={<Landing/>}></Route>
         <Route path='/login' element={<Login/>}></Route>
         <Route path='/signup' element={<Signup/>}></Route>
         <Route path='/wallet' element={<ConnectWallet/>}></Route>
