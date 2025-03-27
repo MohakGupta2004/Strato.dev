@@ -6,16 +6,18 @@ import { faDollarSign } from '@fortawesome/free-solid-svg-icons';
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import GitHubConfigModal from './GitHubConfigModal';
 import DepositFundsModal from './DepositFundsModal';
-
+import { deposit } from '../utils/sendDeposit';
+import { withdrawFunds } from '../utils/getWithdraw';
+import { getBalance } from '../utils/getBalance';
 const Navbar = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [depositFundsModalOpen, setDepositFundsModalOpen] = useState(false);
   const { address, isConnected } = useAccount(); // Get wallet address
   const { disconnect } = useDisconnect(); // Disconnect wallet
   const navigate = useNavigate(); // Navigation hook
-
-  // Sample balance and wallet address for demonstration
-  const balance = 100; // Replace with actual balance logic
+  const [balance, setBalance] = useState(12.00)
+  const [errorMessage, setErrorMessage] = useState<string>()
+  // Sample balance and wallet address for demonstration 
   const walletAddress = address || '0x0'; // Use the connected wallet address
 
   // Redirect to /wallet if not authenticated
@@ -24,14 +26,60 @@ const Navbar = () => {
       navigate('/wallet'); // Redirect to wallet connection page
     }
   }, [isConnected, navigate]);
+  useEffect(() => {
+    if (walletAddress !== "0x0") {
+      getBalance(walletAddress).then((res) => {
+        setBalance(Number(res));
+      });
+    }
+  }, [walletAddress]);
+  
 
-  const handleDeposit = () => {
+  const handleDeposit = async (amount: number) => {
 
     // Add logic to handle deposit
+    try {
+      // Attempt to perform deposit
+      const result = await deposit(amount, walletAddress);
+      console.log(result);
+      
+      // Update balance if deposit succeeded
+      if (result) {
+        // Option 1: Update state directly if you trust the amount
+        setBalance((prevBalance) => prevBalance + amount);
+        // Option 2: Alternatively, re-fetch balance from the contract:
+        // getBalance(walletAddress).then((res) => setBalance(Number(res)));
+        
+        setErrorMessage(''); // Clear any previous error message
+      }
+    } catch (error) {
+      console.error("Deposit error:", error);
+      // Set an error message to be shown on the modal
+      setErrorMessage("Deposit failed: insufficient funds or transaction error.");
+    }
   };
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async() => {
     // Add logic to handle withdrawal
+    try {
+      // Attempt to perform deposit
+      const result = await withdrawFunds(walletAddress);
+      console.log(result);
+      
+      // Update balance if deposit succeeded
+      if (result) {
+        // Option 1: Update state directly if you trust the amount
+        setBalance(0);
+        // Option 2: Alternatively, re-fetch balance from the contract:
+        // getBalance(walletAddress).then((res) => setBalance(Number(res)));
+        
+        setErrorMessage(''); // Clear any previous error message
+      }
+    } catch (error) {
+      console.error("Withdraw error:", error);
+      // Set an error message to be shown on the modal
+      setErrorMessage("Deposit failed: insufficient funds or transaction error.");
+    }
   };
 
   return (

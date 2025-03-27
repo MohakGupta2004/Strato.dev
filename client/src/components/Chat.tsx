@@ -11,6 +11,8 @@ import { getFileNode } from "../utils/getFileNode";
 import { debounce } from 'lodash';
 import { cleanNestedFileTree, updateFileContentsInTree } from "../utils/cleanNestedFileTree";
 import PushToGithub from "./PushToGithub";
+import { makePayment } from "../utils/makePayment";
+import { useAccount } from "wagmi";
 
 // FileExplorer Component
 const FileExplorer = ({ fileTree, setCurrentFile, openFiles, setOpenFiles, parentPath = "" }: { 
@@ -121,6 +123,8 @@ const Chat = ({ projectId }: { projectId: string }) => {
   const [fileToRename, setFileToRename] = useState<string | null>(null);
   const [currenProcess, setCurrentProcess] = useState<any>(null)
   const [loading, setLoading] = useState(true);
+  const {address} = useAccount()
+  const [paymentDone, setPaymentDone] = useState(false)
 
   /** ✅ Fetch user on mount */
   useEffect(() => {
@@ -175,6 +179,21 @@ const Chat = ({ projectId }: { projectId: string }) => {
       if (data.message.startsWith("@ai ")) {
 
         try {
+          const payment = await makePayment(address || '0x0')
+          if(!payment){
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: prev.length + 1,
+                text: "Insufficient Funds",
+                sender: "AI",
+                name: "others",
+              },
+            ]);
+            setPaymentDone(false)
+            return;
+          }
+          setPaymentDone(true)
           const result = await api.post("/ai", { prompt: data.message.slice(4) });
           console.log("AI FileTree Response:", result.data); // ✅ Debug AI response
           const parsedData = typeof result.data === "string" ? JSON.parse(result.data) : result.data;
@@ -184,7 +203,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
             setFileTree(flattenFileTree(parsedData.fileTree)); // ✅ Normalize structure
             saveFileTreeDebounced(flattenFileTree(parsedData.fileTree))
           }
-
+          
           setMessages((prev) => [
             ...prev,
             {
@@ -288,6 +307,7 @@ const Chat = ({ projectId }: { projectId: string }) => {
     <PushToGithub
       projectId={projectId} 
       fileTree={fileTree}
+      paymentDone={paymentDone}
     />
     <div className="w-full relative flex h-screen">
       {/* Chat Interface */}

@@ -14,9 +14,10 @@ import { withdrawFunds } from '../utils/getWithdraw';
 interface PushToGithubProps {
   projectId: string;
   fileTree: any;
+  paymentDone: boolean
 }
 
-const PushToGithub: React.FC<PushToGithubProps> = ({ projectId, fileTree }) => {
+const PushToGithub: React.FC<PushToGithubProps> = ({ projectId, fileTree, paymentDone }) => {
   const [commitMessageModalOpen, setCommitMessageModalOpen] = useState(false);
   const [depositFundsModalOpen, setDepositFundsModalOpen] = useState(false);
   const [commitMessage, setCommitMessage] = useState<string | null>(null);
@@ -45,7 +46,7 @@ const PushToGithub: React.FC<PushToGithubProps> = ({ projectId, fileTree }) => {
         setBalance(Number(res));
       });
     }
-  }, [walletAddress]);
+  }, [walletAddress, paymentDone]);
 
   const handleCommitMessageSubmit = async (message: string) => {
     if (!localStorage.getItem("githubPAT")) return;
