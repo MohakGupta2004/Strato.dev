@@ -68,7 +68,7 @@ function Signin() {
     return (
         <>
             <div className="flex justify-center items-center">
-                <div className="border p-5 rounded-md bg-gray-100">
+                <div className="border p-5 rounded-md bg-gray-500">
                     <div className="flex flex-col items-center justify-center gap-5">
                         <div className="flex flex-col items-center">
                             <div className="border-2 rounded-xl p-2">

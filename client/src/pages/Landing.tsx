@@ -4,7 +4,7 @@ import Signin from '../components/Signin';
 function Landing() {
   return (
     <SplineScene>
-      <Signin />
+      <Signin />  {/*add new comps */}
     </SplineScene>
   );
 }

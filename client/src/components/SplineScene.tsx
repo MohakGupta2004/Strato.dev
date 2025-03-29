@@ -22,7 +22,7 @@ const SplineScene = ({ children }: SplineSceneProps) => {
           console.log('Mouse down event:', e);
         }}
       />
-      <div style={{ pointerEvents:'none', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%'}}>
+      <div style={{ pointerEvents:'none', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%'}}>    //pointerEvents:'none' can make a problem
         {children}
       </div>
     </div>
